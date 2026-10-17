@@ -8,6 +8,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+ENV DB_PATH=/data/pokemon.db
+
+RUN mkdir -p /data
+
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+
 EXPOSE 8000
 
-CMD ["sh", "-c", "python -m fastapi run main.py --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["/start.sh"]

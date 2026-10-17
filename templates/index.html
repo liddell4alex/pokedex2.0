@@ -18,24 +18,46 @@
             }
 
             img {
-                width: 100px;
-                height: 100px;
+                width: 200px;
+                height: 200px;
             }
 
         </style>
     </head>
     <body>
-        <p>Bienvenidos a mi pokedex</p>
-        <input type="text" id="busqueda" placeholder="Mewtwo">
+        <h1>Bienvenidos a mi pokedex</h1> <br>
+        <h2>Buscar pokemón</h2>
+            <input type="text" id="busqueda" placeholder="Algún pokemonsillo">
+
+        <h2>Agregar pokemón</h2>
+            <form id="form-agregar">
+                <input type="text" id="agregar-nombre" placeholder="Nombre del Pokemón" required>
+                <input type="url" id="agregar-imagen" placeholder="URL de la imágen" required>
+                <button type="submit">Agregar pokemón</button>
+            </form>
+
+        <h2 id="titulo-editar" hidden>Editar Pokemón</h2>
+            <form id="form-editar" hidden>
+                <input type="hidden" id="editar-id">
+                <input type="text" id="editar-nombre" placeholder="Nombre del Pokemón" required>
+                <input type="url" id="editar-imagen" placeholder="URL de la imágen" required>
+
+                <button type="submit">Guardar cambios</button>
+                <button type="button" id="cancelar-edicion">Cancelar</button>
+            </form>
 
         {% for p in pokemon %}
         <div class="poke" data-pokemonsin="{{ p.name }}">
-            <img src="{{ p.imagen }}" alt="{{ p.name }}">
+            <img src="{{ p.image }}" alt="{{ p.name }}">
             <h3>No. {{ p.id }} - {{ p.name | capitalize}}</h3>
+
+            <button type="button" class="editar" data-id="{{ p.id }}" data-nombre="{{ p.name }}" data-imagen="{{ p.image }}">Editar</button>
+            <button type="button" class="eliminar" data-id="{{ p.id }}" data-nombre="{{ p.name }}">Eliminar</button>
         </div>
         {% endfor %}
 
-        <!-- Script para buscar in place (sin enter) -->
+        <!-- Zona de scripts -->
+        <!-- Para buscar in place (sin enter) -->
         <script>
             // Obtengo el texto que hay en la barra de busqueda
             const search = document.getElementById("busqueda");
@@ -50,7 +72,9 @@
                 // Por cada pokemon encontrado en .poke
                 pokes.forEach(function (poke) {
                     // Tomo su nombre de data-pokemonsin
-                    const name = poke.dataset.pokemonsin;
+                    const name = poke.dataset.pokemonsin.toLowerCase();
+                    console.log("Nombre:", name);
+                    console.log("Busqueda:", text);
 
                     // Cada tarjeta tiene un nombre de pokemon, esta condicional
                     // muestra las que contengan en el nombre el texto del input
@@ -60,6 +84,126 @@
             });
         </script>
 
+        <!-- Para agregar un nuevo pokemon -->
+        <script>
+            // Obtiene el formulario por id
+            const formAgregar = document.getElementById("form-agregar");
+            // Escucha el envío de datos
+            formAgregar.addEventListener("submit", async function (event) { // async permite usar await para que fetch(/post) no detenga la página
+                event.preventDefault(); // Evita que el formulario recargue la página
+
+                // Obtengo el nombre y la imagen
+                const nombre = document.getElementById("agregar-nombre").value;
+                const imagen = document.getElementById("agregar-imagen").value;
+
+                // Envía la petición al backend (fetch usa "/post") corresponde a @app.post("/post")
+                const respuesta = await fetch("/post", {
+                    method: "POST", // Metodo HTML
+                    headers: {"Content-Type": "application/json"},  // Indica el formato de datos
+                    body: JSON.stringify({  // Transforma los datos dados a formato JSON (lo que espera NewPokemon) para enviarlos
+                        name: nombre,
+                        image: imagen
+                    })
+                });
+
+                // If para saber si todo salió bien
+                if(respuesta.ok) {
+                    alert("Pokemón agregado correctamente");
+                    location.reload()   // Recarga la página
+                } else {
+                    alert("Error al intentar agregar el Pokemón")
+                }
+            });
+        </script>
+
+        <!-- Para editar un pokemon -->
+        <script>
+            // Obtengo todods los botones y el formulario
+            const botonesEditar = document.querySelectorAll(".editar");
+            const formEditar = document.getElementById("form-editar");
+
+            // Por cada boton
+            botonesEditar.forEach(function (boton) {
+                // Escuchador de clickeo
+                boton.addEventListener("click", function () {
+                    // Agrega en los inputs los valores del pokemón
+                    document.getElementById("editar-id").value = boton.dataset.id;
+                    document.getElementById("editar-nombre").value = boton.dataset.nombre;
+                    document.getElementById("editar-imagen").value = boton.dataset.imagen;
+
+                    // Muestra el titulo y el formulario, desactiva el hiddenn
+                    document.getElementById("titulo-editar").hidden = false
+                    formEditar.hidden = false;
+
+                    // Subir al inicio
+                    window.scrollTo(0,0);
+                });
+            });
+            
+            // Oculta el formulario de edicion si se cancela
+            document.getElementById("cancelar-edicion").addEventListener("click", function () {
+                document.getElementById("titulo-editar").hidden = true
+                formEditar.hidden = true;
+            });
+
+            formEditar.addEventListener("submit", async function (event) {
+                event.preventDefault()
+
+                const id = document.getElementById("editar-id").value;
+                const nombre = document.getElementById("editar-nombre").value;
+                const imagen = document.getElementById("editar-imagen").value;
+
+                const respuesta = await fetch(`/put/${id}`, {
+                    method: "PUT",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({
+                        name: nombre,
+                        image: imagen
+                    })
+                });
+                
+                // If para saber si todo salió bien
+                if(respuesta.ok) {
+                    alert("Pokemón agregado correctamente");
+                    location.reload()   // Recarga la página
+                } else {
+                    alert("Error al intentar agregar el Pokemón")
+                }
+            });
+        </script>
+
+        <!-- Para eliminar un pokemón -->
+        <script>
+            // Obtengo todos los botones
+            const botonesEliminar = document.querySelectorAll(".eliminar");
+           
+            // Por cada boton
+            botonesEliminar.forEach(function (boton) {
+                // Escuchador de clickeo
+                boton.addEventListener("click", async function () {
+                    const id = boton.dataset.id;    // Obtengo el id del pokemon seleccionado
+                    const name = boton.dataset.nombre;
+                    const confirmar = confirm(`¿Quiere eliminar el pokemón ${name}?`); // Para confirmar la eliminación
+
+                    // Si no confirma termina la función
+                    if(!confirmar) {
+                        return;
+                    }
+
+                    // Mando la eliminación con fetch
+                    const respuesta = await fetch(`/delete/${id}`, {
+                        method: "DELETE"
+                    });
+                    
+                    if(respuesta.ok) {
+                        alert(`Pokemón ${name} eliminado correctamente`);
+                        location.reload();
+                    } else {
+                        alert("Error al intentar eliminar");
+                    }
+                });
+            });
+        </script>
 
     </body>
 </html>
