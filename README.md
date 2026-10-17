@@ -1,2 +1,3 @@
-# pokedex-chafa
-Muestra pokemones y puedes buscar
+# Pokedex 2.0
+
+Utiliza una base de datos para almacenar a los pokemones. En esta versión se incluyen las funciones habituales de una base de datos; CRUD.
