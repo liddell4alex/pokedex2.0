@@ -2,7 +2,7 @@
 
 set -e
 
-if [ ! -f /data/pokemon.db ] then
+if [ ! -f /data/pokemon.db ]; then
     echo "Inicializando la base de datos"
     python seed.py
 fi
